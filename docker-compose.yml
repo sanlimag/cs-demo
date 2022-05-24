@@ -1,28 +1,49 @@
-version: '3.8'
+version: '3.5'
 services:
-  appseed-app:
-    container_name: appseed_app
+  fluentbit:
+    container_name: fluentbit
+    image: fluent/fluent-bit:1.9.0
+    build:
+      context: ./fluent-bit
+    networks:
+      - quickstart
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+  app-server:
+    container_name: app-server
     restart: always
     env_file: .env
     build: .
     networks:
       - db_network
       - web_network
-  nginx:
-    container_name: nginx
+    depends_on:
+      - fluentbit
+    logging:
+      driver: "fluentd"
+      options:
+        tag: app-server
+  web-server:
+    container_name: web-server
     restart: always
     image: "nginx:latest"
+    build:
+      context: ./nginx
     ports:
-      - "85:85"
-    volumes:
-      - ./nginx:/etc/nginx/conf.d
+      - "80:80"
     networks:
       - web_network
-    depends_on: 
-      - appseed-app
+    depends_on:
+      - fluentbit
+      - app-server
+    logging:
+      driver: "fluentd"
+      options:
+        tag: web-server
+
 networks:
   db_network:
     driver: bridge
   web_network:
     driver: bridge
- 
