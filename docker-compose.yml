@@ -6,12 +6,12 @@ services:
     build:
       context: ./fluent-bit
     networks:
-      - quickstart
+      - web_network
     ports:
       - "24224:24224"
       - "24224:24224/udp"
-  app-server:
-    container_name: app-server
+  app_server:
+    container_name: app_server
     restart: always
     env_file: .env
     build: .
@@ -24,8 +24,8 @@ services:
       driver: "fluentd"
       options:
         tag: app-server
-  web-server:
-    container_name: web-server
+  web_server:
+    container_name: web_server
     restart: always
     image: "nginx:latest"
     build:
@@ -36,7 +36,7 @@ services:
       - web_network
     depends_on:
       - fluentbit
-      - app-server
+      - app_server
     logging:
       driver: "fluentd"
       options:
