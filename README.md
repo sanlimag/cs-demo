@@ -140,7 +140,7 @@ The project is coded using blueprints, app factory pattern, dual configuration p
    |-- docker-compose.yml                   # Deployment
    |-- gunicorn-cfg.py                      # Deployment   
    |-- nginx                                # Deployment
-   |    |-- appseed-app.conf                # Deployment 
+   |    |-- default.conf                # Deployment 
    |
    |-- .env                                 # Inject Configuration via Environment
    |-- run.py                               # Start the app - WSGI gateway

@@ -11,7 +11,7 @@ from apps.config import config_dict
 from apps import create_app, db
 
 # WARNING: Don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('PRODUCTION', default=False, cast=bool)
 
 # The configuration
 get_config_mode = 'Debug' if DEBUG else 'Production'
