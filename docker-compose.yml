@@ -64,6 +64,9 @@ services:
       driver: "fluentd"
       options:
         tag: web_server
+volumes:
+  db-data:
+
 networks:
   db_network:
     driver: bridge
