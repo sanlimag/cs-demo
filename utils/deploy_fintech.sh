@@ -59,6 +59,15 @@ then
   sudo docker-compose down && sudo docker-compose up --build -d
   exit
 EOF
+elif [ $APP_VERSION = 0 ]
+then
+  clear
+  echo "Shutting down cluster"
+  ssh -tt -o ConnectTimeout=5 -i $CERT_PATH ubuntu@$SERVER_IP << EOF || connection=false
+  cd cs-demo
+  sudo docker-compose down
+  exit
+EOF
 else
   echo "Error: Application version MUST be 1 or 2"
 fi
