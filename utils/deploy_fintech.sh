@@ -67,6 +67,7 @@ then
   ssh -tt -o ConnectTimeout=5 -i $CERT_PATH ubuntu@$SERVER_IP << EOF || connection=false
   cd cs-demo
   sudo docker-compose down
+  sudo docker volume prune -f
   exit
 EOF
 else
