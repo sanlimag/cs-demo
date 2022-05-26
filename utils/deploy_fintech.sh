@@ -54,6 +54,7 @@ then
   echo "Deploying v2"
   ssh -tt -o ConnectTimeout=5 -i $CERT_PATH ubuntu@$SERVER_IP << EOF || connection=false
   cd cs-demo
+  git fetch
   git checkout ext_logging
   git reset --hard origin/ext_logging
   sudo docker-compose down && sudo docker-compose up --build -d
