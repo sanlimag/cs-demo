@@ -47,7 +47,7 @@ then
   git checkout master
   sudo docker-compose down && sudo docker-compose up --build -d
   echo "Creating test user"
-  curl 'http://localhost/register' -s --data-raw 'username=tst&email=tst%40mail.com&password=tst&register='
+  curl 'http://localhost/register' -s --data-raw 'username=test&email=test%40mail.com&password=test&register=' | grep created
   exit
 EOF
 elif [ $APP_VERSION = 2 ]

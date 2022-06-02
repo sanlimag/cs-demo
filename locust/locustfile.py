@@ -28,7 +28,7 @@ class QuickstartUser(HttpUser):
 #        print(f"Status code: {response.status_code}")
 #        print(f"Headers: {response.headers}")
         # Send login request
-        response = self.client.post("/login", json={"username": "test", "password": "test", "login": ""})
+        response = self.client.post("/login", {"username": "test", "password": "test", "login": ""})
         print(f"###### Send login request for test user...")
         print(f"Request url: {response.request.url}")
         print(f"Request body: {response.request.body}")
