@@ -71,7 +71,7 @@ services:
       context: ./locust
     ports:
       - "8089:8089"
-    command: -f locustfile.py --config locust.conf -H http://locust:8089
+    command: -f locustfile.py -H http://23.22.13.190 -u 5 -t 30m --headless
     depends_on:
       - web_server
       - app_server
