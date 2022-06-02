@@ -20,7 +20,7 @@ class QuickstartUser(HttpUser):
         self.client.headers = self.headers
         # Create test user
         self.client.get("/register")
-        response = self.client.post("/register", {"username": "test", "password": "test", "register": ""})
+        response = self.client.post("/register", headers={"Content-Type": "application/json"}, {"username": "test", "password": "test", "register": ""})
         print(f"###### Create Test User request...")
         print(f"Request url: {response.request.url}")
         print(f"Request headers: {response.request.headers}")
