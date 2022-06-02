@@ -20,12 +20,16 @@ class QuickstartUser(HttpUser):
         self.client.headers = self.headers
         # Create test user
         response = self.client.post("/register", {"username": "test", "password": "test", "register": ""})
-        print(f"Response Status: {response.headers}")
-        print(f"Headers: {response.status_code}")
+        print(f"###### Create Test User request...")
+        print(f"Request: {response.request.body}")
+        print(f"Status code: {response.status_code}")
+        print(f"Headers: {response.headers}")
         # Send login request
         response = self.client.post("/login", {"username": "test", "password": "test", "login": ""})
-        print(f"Response Status: {response.headers}")
-        print(f"Headers: {response.status_code}")
+        print(f"###### Send login request for test user...")
+        print(f"Request: {response.request.body}")
+        print(f"Response Status: {response.status_code}")
+        print(f"Headers: {response.headers}")
 
         # set "token" from response header
         #self.client.headers.update({'Authorization': response.headers.get('token')})
