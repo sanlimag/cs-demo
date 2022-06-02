@@ -66,11 +66,12 @@ services:
         tag: web_server
   locust:
     image: locustio/locust
+    container_name: locust
     build:
       context: ./locust
     ports:
       - "8089:8089"
-    command: locust
+    command: -f locustfile.py -H http://locust:8089
     depends_on:
       - web_server
       - app_server
