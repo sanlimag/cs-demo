@@ -80,7 +80,7 @@ if [ $connection = true ]
 then
   echo "============================================================================"
   echo "Finishing deploying application.Please wait a few seconds..."
-  sleep 10
+  sleep 5
   echo "Application $APP_VERSION deployed: http://$SERVER_IP"
 else
   echo "============================================================================"
