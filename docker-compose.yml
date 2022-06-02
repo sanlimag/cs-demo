@@ -64,6 +64,17 @@ services:
       driver: "fluentd"
       options:
         tag: web_server
+  locust:
+    image: locustio/locust
+    build:
+      context: ./locust
+    ports:
+      - "8089:8089"
+    command: locust
+    depends_on:
+      - web_server
+      - app_server
+      - db
 volumes:
   db-data:
 
