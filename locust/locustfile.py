@@ -19,7 +19,7 @@ class QuickstartUser(HttpUser):
         self.headers = {"User-Agent": USER_AGENTS[random.randint(0,len(USER_AGENTS)-1)]}
         self.client.headers = self.headers
         # Send login request
-        response = self.client.post("/login", {"username": "user", "password": "pass", "login": ""})
+        response = self.client.post("/login", {"username": "test", "password": "test", "login": ""})
         print(f"Response Status: {response.headers}")
         print(f"Headers: {response.status_code}")
 
