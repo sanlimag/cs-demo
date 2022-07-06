@@ -45,9 +45,9 @@ then
   git fetch
   git reset --hard origin/master
   git checkout master
-  sudo docker-compose down && sudo docker-compose up --build -d
-  echo "Creating test user"
-  curl 'http://localhost/register' -s --data-raw 'username=test&email=test%40mail.com&password=test&register=' | grep created
+  docker-compose down
+  docker-compose up --build -d
+  curl 'http://localhost/register' -s --data-raw 'username=test&email=test%40mail.com&password=test&register=' | grep created | cut -d"<" -f1
   exit
 EOF
 elif [ $APP_VERSION = 2 ]
@@ -59,7 +59,8 @@ then
   git fetch
   git checkout ext_logging
   git reset --hard origin/ext_logging
-  sudo docker-compose down && sudo docker-compose up --build -d
+  docker-compose down
+  docker-compose up --build -d
   exit
 EOF
 elif [ $APP_VERSION = 0 ]
