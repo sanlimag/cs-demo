@@ -3,6 +3,8 @@ services:
   fluentbit:
     container_name: fluentbit
     image: fluent/fluent-bit:1.9.0
+    environment:
+      S3_BUCKET: ${S3_BUCKET}
     build:
       context: ./fluent-bit
     networks:
