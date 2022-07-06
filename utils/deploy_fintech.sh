@@ -45,7 +45,8 @@ then
   git fetch
   git reset --hard origin/master
   git checkout master
-  sudo docker-compose down && sudo docker-compose up --build -d
+  sudo docker-compose down
+  sudo docker-compose up --build -d
   exit
 EOF
 elif [ $APP_VERSION = 2 ]
@@ -57,7 +58,8 @@ then
   git fetch
   git checkout ext_logging
   git reset --hard origin/ext_logging
-  sudo docker-compose down && sudo docker-compose up --build -d
+  sudo docker-compose down
+  sudo docker-compose up --build -d
   exit
 EOF
 elif [ $APP_VERSION = 0 ]
