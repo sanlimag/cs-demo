@@ -70,6 +70,8 @@ services:
   locust:
     image: locustio/locust
     container_name: locust
+    environment:
+      IP_ADDR: ${IP_ADDR}
     build:
       context: ./locust
     ports:
