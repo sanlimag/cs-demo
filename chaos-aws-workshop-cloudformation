@@ -5,7 +5,7 @@
         "ChaosAwsWorkshopInstance": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
-                "KeyName": "slima-cs",
+                "KeyName": "ChaosAwsWorkshopKey",
                 "ImageId": "ami-052efd3df9dad4825",
                 "InstanceType": "t2.medium",
                 "IamInstanceProfile" : {
@@ -33,7 +33,7 @@
                             "git checkout aws-workshop\n",
                             "git reset --hard origin/aws-workshop\n",
                             "sudo chown ubuntu:ubuntu /home/ubuntu/cs-demo/.env\n",
-                            "sudo echo -e \"\n\"S3_BUCKET=`aws s3 ls | cut -d' ' -f3 | grep aws-workshop` >> /home/ubuntu/cs-demo/.env\n",
+                            "sudo echo -e \"\n\"S3_BUCKET=`aws s3 ls | cut -d' ' -f3 | grep chaosawsworkshopbucket` >> /home/ubuntu/cs-demo/.env\n",
                             "sudo echo IP_ADDR=`dig +short myip.opendns.com @resolver1.opendns.com` >> /home/ubuntu/cs-demo/.env\n",
                             "sudo mkcert -key-file /home/ubuntu/cs-demo/nginx/nginx-key.pem -cert-file /home/ubuntu/cs-demo/nginx/nginx-cert.pem `dig +short myip.opendns.com @resolver1.opendns.com`\n",
                             "sudo mkcert -install\n",
@@ -79,6 +79,11 @@
                                 {
                                     "Effect": "Allow",
                                     "Action": "s3:*",
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "ec2:*",
                                     "Resource": "*"
                                 }
                             ]
@@ -129,6 +134,12 @@
                     }
                 ]
             }
+        },
+        "ChaosAwsWorkshopKey": {
+            "Type" : "AWS::EC2::KeyPair",
+            "Properties" : {
+                "KeyName" : "ChaosAwsWorkshopKey"
+                }
         }
     }
 }
