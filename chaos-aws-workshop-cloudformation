@@ -2,17 +2,17 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "ChaosSearch AWS Workshop",
     "Resources": {
-        "ChaosAwsWorkshopInstance": {
+        "ChaosWorkshopInstance": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
-                "KeyName": "ChaosAwsWorkshopKey",
+                "KeyName": "ChaosWorkshopKey",
                 "ImageId": "ami-052efd3df9dad4825",
                 "InstanceType": "t2.medium",
                 "IamInstanceProfile" : {
-                    "Ref" : "ChaosAwsWorkshopInstanceProfile"
+                    "Ref" : "ChaosWorkshopInstanceProfile"
                 },
                 "SecurityGroupIds": [
-                    "Fn::GetAtt" : [ "ChaosAwsWorkshopSecurityGroup", "GroupId" ]
+                    { "Fn::GetAtt" : [ "ChaosWorkshopSg", "GroupId" ] }
                 ],
                 "UserData": {
                     "Fn::Base64": {
@@ -33,7 +33,7 @@
                             "git checkout aws-workshop\n",
                             "git reset --hard origin/aws-workshop\n",
                             "sudo chown ubuntu:ubuntu /home/ubuntu/cs-demo/.env\n",
-                            "sudo echo -e \"\n\"S3_BUCKET=`aws s3 ls | cut -d' ' -f3 | grep chaosawsworkshopbucket` >> /home/ubuntu/cs-demo/.env\n",
+                            "sudo echo -e \"\n\"S3_BUCKET=`aws s3 ls | cut -d' ' -f3 | grep chaosworkshopbucket` >> /home/ubuntu/cs-demo/.env\n",
                             "sudo echo IP_ADDR=`dig +short myip.opendns.com @resolver1.opendns.com` >> /home/ubuntu/cs-demo/.env\n",
                             "sudo mkcert -key-file /home/ubuntu/cs-demo/nginx/nginx-key.pem -cert-file /home/ubuntu/cs-demo/nginx/nginx-cert.pem `dig +short myip.opendns.com @resolver1.opendns.com`\n",
                             "sudo mkcert -install\n",
@@ -45,12 +45,12 @@
                 "Tags" : [
                     {
                         "Key" : "Name",
-                        "Value" : "chaos-aws-workshop"
+                        "Value" : "chaos-workshop"
                      }
                 ]
             }
         },
-        "ChaosAwsWorkshopRole": {
+        "ChaosWorkshopRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
                 "AssumeRolePolicyDocument": {
@@ -72,7 +72,7 @@
                 "Path": "/",
                 "Policies": [
                     {
-                        "PolicyName": "chaos-aws-workshop-policy",
+                        "PolicyName": "chaos-workshop-policy",
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [
@@ -92,24 +92,21 @@
                 ]
             }
         },
-        "ChaosAwsWorkshopInstanceProfile": {
+        "ChaosWorkshopInstanceProfile": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
                 "Path": "/",
                 "Roles": [
                     {
-                        "Ref": "ChaosAwsWorkshopRole"
+                        "Ref": "ChaosWorkshopRole"
                     }
                 ]
             }
         },
-        "ChaosAwsWorkshopBucket": {
-            "Type": "AWS::S3::Bucket",
-            "Properties": {
-                "AccessControl": "Private" 
-            }
+        "ChaosWorkshopBucket": {
+            "Type": "AWS::S3::Bucket"
         },
-        "ChaosAwsWorkshopSecurityGroup": {
+        "ChaosWorkshopSg": {
             "Type" : "AWS::EC2::SecurityGroup",
             "Properties" : {
                 "GroupDescription": "Allow HTTP/HTTPS",
@@ -135,11 +132,138 @@
                 ]
             }
         },
-        "ChaosAwsWorkshopKey": {
+        "ChaosWorkshopKey": {
             "Type" : "AWS::EC2::KeyPair",
             "Properties" : {
-                "KeyName" : "ChaosAwsWorkshopKey"
+                "KeyName" : "ChaosWorkshopKey"
                 }
+        },
+        "ChaosWorkshopSqsWebServer": {
+            "Type" : "AWS::SQS::Queue",
+            "Properties" : {
+                "QueueName" : "chaos-workshop-sqs-webserver",
+                "VisibilityTimeout" : 300
+            }
+        },
+        "ChaosWorkshopSqsAppServer": {
+            "Type" : "AWS::SQS::Queue",
+            "Properties" : {
+                "QueueName" : "chaos-workshop-sqs-appserver",
+                "VisibilityTimeout" : 300
+            }
+        },
+        "ChaosWorkshopSqsDb": {
+            "Type" : "AWS::SQS::Queue",
+            "Properties" : {
+                "QueueName" : "chaos-aws-workshop-sqs-db",
+                "VisibilityTimeout" : 300
+            }
+        },
+        "ChaosWorkshopSqsPolicy": {
+            "Type" : "AWS::SQS::QueuePolicy",
+            "Properties" : {
+                "Queues" : [{ "Ref": "ChaosWorkshopSqsWebServer" }, { "Ref": "ChaosWorkshopSqsAppServer" }, { "Ref": "ChaosWorkshopSqsDb" }],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "s3.amazonaws.com"
+                            },
+                            "Action": "sqs:*",
+                            "Resource": { "Fn::GetAtt": [ "ChaosWorkshopSqsWebServer", "Arn" ]},
+                            "Condition": {
+                                "ArnLike": {
+                                    "aws:SourceArn": {
+                                        "Fn::GetAtt": [ "ChaosWorkshopBucket", "Arn" ]
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "s3.amazonaws.com"
+                            },
+                            "Action": "sqs:*",
+                            "Resource": { "Fn::GetAtt": [ "ChaosWorkshopSqsAppServer", "Arn" ]},
+                            "Condition": {
+                                "ArnLike": {
+                                    "aws:SourceArn": {
+                                        "Fn::GetAtt": [ "ChaosWorkshopBucket", "Arn" ]
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "s3.amazonaws.com"
+                            },
+                            "Action": "sqs:*",
+                            "Resource": { "Fn::GetAtt": [ "ChaosWorkshopSqsDb", "Arn" ]},
+                            "Condition": {
+                                "ArnLike": {
+                                    "aws:SourceArn": {
+                                        "Fn::GetAtt": [ "ChaosWorkshopBucket", "Arn" ]
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Principal": "*",
+                            "Action": "sqs:*",
+                            "Resource": {
+                                "Fn::GetAtt": [ "ChaosWorkshopSqsWebServer", "Arn" ]
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Principal": "*",
+                            "Action": "sqs:*",
+                            "Resource": {
+                                "Fn::GetAtt": [ "ChaosWorkshopSqsAppServer", "Arn" ]
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Principal": "*",
+                            "Action": "sqs:*",
+                            "Resource": {
+                                "Fn::GetAtt": [ "ChaosWorkshopSqsDb", "Arn" ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "ApplicationUrl" : {
+            "Description": "URL to access the application",
+            "Value" : { "Fn::Join": [
+                "", [
+                  "http://",
+                  { "Fn::GetAtt" : [ "ChaosWorkshopInstance", "PublicDnsName" ]}
+                ]
+            ]}
+        },
+        "S3Bucket": {
+           "Description": "S3 Bucket storing the application logs",
+            "Value" : { "Fn::GetAtt" : ["ChaosWorkshopBucket", "DomainName"] }
+        },
+        "WebServerSqs" : {
+            "Description": "SQS ARN - Web Server",
+            "Value" : { "Fn::GetAtt" : ["ChaosWorkshopSqsWebServer", "Arn"] }
+        },
+        "AppServerSqs" : {
+            "Description": "SQS ARN - App Server",
+            "Value" : { "Fn::GetAtt" : ["ChaosWorkshopSqsAppServer", "Arn"] }
+        },
+        "DbSqs" : {
+            "Description": "SQS ARN - DB",
+            "Value" : { "Fn::GetAtt" : ["ChaosWorkshopSqsDb", "Arn"] }
         }
     }
 }
