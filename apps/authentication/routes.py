@@ -22,8 +22,8 @@ import json_logging, logging
 #Configure logging
 json_logging.init_flask(enable_json=True)
 logger = logging.getLogger("app-logger")
-logger.setLevel(logging.ERROR)
-logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 @blueprint.route('/')
@@ -49,11 +49,11 @@ def login():
         if user and verify_pass(password, user.password):
 
             login_user(user)
-            logger.info(f'{{"action": "login", "status": "completed", "parameters": [ "username": {user.username},"user_type": "subscriber"]}}')
+            logger.info(f'{{"action": "login", "status": "completed", "parameters": [ "username": {username}, "user_type": "subscriber"]}}')
             return redirect(url_for('authentication_blueprint.route_default'))
 
         # Something (user or pass) is not ok
-        logger.error(f'{{"action": "login", "status": "failed", "reason": "wrong credentials", "parameters": [ "username": {user.username},"user_type": "subscriber"]}}')
+        logger.error(f'{{"action": "login", "status": "failed", "reason": "wrong credentials", "parameters": [ "username": {username}, "user_type": "subscriber"]}}')
         return render_template('accounts/login.html',
                                msg='Wrong user or password',
                                form=login_form)
@@ -74,9 +74,9 @@ def register():
 
         # Check usename exists
         user = Users.query.filter_by(username=username).first()
-        logger.info(f'{{"action": "create_user", "status": "completed", "parameters": [ "username": {user.username},"user_type": "subscriber"]}}')
+        logger.info(f'{{"action": "create_user", "status": "completed", "parameters": [ "username": {username},"user_type": "subscriber"]}}')
         if user:
-            logger.error(f'{{"action": "create_user", "status": "failed", "reason": "duplicated username", "parameters": [ "username": {user.username},"user_type": "subscriber"]}}')
+            logger.error(f'{{"action": "create_user", "status": "failed", "reason": "duplicated username", "parameters": [ "username": {username},"user_type": "subscriber"]}}')
             return render_template('accounts/register.html',
                                    msg='Username already registered',
                                    success=False,
@@ -95,7 +95,7 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        logger.info(f'{{"action": "create_user", "status": "completed", "parameters": [ "username": {user.username},"user_type": "subscriber"]}}')
+        logger.info(f'{{"action": "create_user", "status": "completed", "parameters": [ "username": {username},"user_type": "subscriber"]}}')
         return render_template('accounts/register.html',
                                msg='User created please <a href="/login"><b>login</b></a>',
                                success=True,
@@ -108,7 +108,7 @@ def register():
 @blueprint.route('/logout')
 def logout():
     logout_user()
-    logger.info(f'{{"action": "logout", "status": "completed", "parameters": [ "username": {user.username},"user_type": "subscriber"]}}')
+    logger.info(f'{{"action": "logout", "status": "completed"}}')
     return redirect(url_for('authentication_blueprint.login'))
 
 
