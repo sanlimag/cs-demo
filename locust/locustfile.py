@@ -72,3 +72,7 @@ class QuickstartUser(HttpUser):
     def gen_errors(self):
         self.client.post("/info")
         self.client.get("/help")
+
+    @task(0.2)
+    def gen_slow_errors(self):
+        self.client.post("/login",{"username_login": "test", "pwd": "test"},headers={"X-CSRFToken": self.csrftoken})
