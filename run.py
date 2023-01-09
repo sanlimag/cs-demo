@@ -13,6 +13,9 @@ from apps import create_app, db
 # WARNING: Don't run with debug turned on in production!
 DEBUG = config('PRODUCTION', default=False, cast=bool)
 
+# Logging
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
+
 # The configuration
 get_config_mode = 'Debug' if DEBUG else 'Production'
 
