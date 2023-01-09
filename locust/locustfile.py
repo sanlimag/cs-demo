@@ -67,11 +67,13 @@ class QuickstartUser(HttpUser):
         self.client.get("/dashboard")
         self.client.get("/transactions")
         self.client.get("/settings")
+        self.client.get("/logout")
 
     @task(1)
     def gen_errors(self):
         self.client.post("/info")
         self.client.get("/help")
+        self.client.get("/test")
 
     @task(0.2)
     def gen_slow_errors(self):
