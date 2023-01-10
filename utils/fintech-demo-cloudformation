@@ -1,0 +1,230 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Chaos Demo",
+    "Resources": {
+        "ChaosDemoInstance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "KeyName": "ChaosDemoKey",
+                "ImageId": "ami-052efd3df9dad4825",
+                "InstanceType": "t2.medium",
+                "IamInstanceProfile": {
+                    "Ref": "ChaosDemoInstanceProfile"
+                },
+                "SecurityGroupIds": [
+                    {
+                        "Fn::GetAtt": [
+                            "ChaosDemoSg",
+                            "GroupId"
+                        ]
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\n",
+                                "sudo apt update\n",
+                                "sudo apt install docker docker-compose git openssl libnss3-tools mkcert unzip -y\n",
+                                "sudo service docker start\n",
+                                "sudo systemctl enable docker\n",
+                                "sudo usermod -a -G docker ubuntu\n",
+                                "curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\"\n",
+                                "unzip awscliv2.zip\n",
+                                "sudo ./aws/install\n",
+                                "git clone https://github.com/sanlimag/cs-demo.git /home/ubuntu/cs-demo\n",
+                                "cd /home/ubuntu/cs-demo\n",
+                                "sudo chown ubuntu:ubuntu /home/ubuntu/cs-demo/.env\n",
+                                "sudo echo -e \"\n\"S3_BUCKET=`aws s3 ls | cut -d' ' -f3 | grep chaosdemobucket` >> /home/ubuntu/cs-demo/.env\n",
+                                "sudo echo IP_ADDR=`dig +short myip.opendns.com @resolver1.opendns.com` >> /home/ubuntu/cs-demo/.env\n",
+                                "sudo mkcert -key-file /home/ubuntu/cs-demo/nginx/nginx-key.pem -cert-file /home/ubuntu/cs-demo/nginx/nginx-cert.pem `dig +short myip.opendns.com @resolver1.opendns.com`\n",
+                                "sudo mkcert -install\n",
+                                "docker-compose up --build -d\n",
+                                "curl 'http://localhost/register' -s --data-raw 'username=test&email=test%40mail.com&password=test&register=' | grep created"
+                            ]
+                        ]
+                    }
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "chaos-workshop"
+                    }
+                ]
+            }
+        },
+        "ChaosDemoRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "chaos-workshop-policy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "s3:*",
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "ec2:*",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "ChaosDemoInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "ChaosDemoRole"
+                    }
+                ]
+            }
+        },
+        "ChaosDemoBucket": {
+            "Type": "AWS::S3::Bucket"
+        },
+        "ChaosDemoSg": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow HTTP/HTTPS",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 443,
+                        "ToPort": 443,
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 22,
+                        "ToPort": 22,
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "ChaosDemoKey": {
+            "Type": "AWS::EC2::KeyPair",
+            "Properties": {
+                "KeyName": "ChaosDemoKey"
+            }
+        },
+        "ChaosDemoSqs": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+                "QueueName": "chaos-demo-sqs",
+                "VisibilityTimeout": 300
+            }
+        },
+        "ChaosDemoSqsPolicy": {
+            "Type": "AWS::SQS::QueuePolicy",
+            "Properties": {
+                "Queues": [
+                    {
+                        "Ref": "ChaosDemoSqs"
+                    }
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "s3.amazonaws.com"
+                            },
+                            "Action": "sqs:*",
+                            "Resource": {
+                                "Fn::GetAtt": [
+                                    "ChaosDemoSqs",
+                                    "Arn"
+                                ]
+                            },
+                            "Condition": {
+                                "ArnLike": {
+                                    "aws:SourceArn": {
+                                        "Fn::GetAtt": [
+                                            "ChaosDemoBucket",
+                                            "Arn"
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Principal": "*",
+                            "Action": "sqs:*",
+                            "Resource": {
+                                "Fn::GetAtt": [
+                                    "ChaosDemoSqs",
+                                    "Arn"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "ApplicationUrl" : {
+        "Description": "URL to access the application",
+        "Value" : { "Fn::Join": [
+            "", [
+              "http://",
+              { "Fn::GetAtt" : [ "ChaosDemoInstance", "PublicDnsName" ]}
+            ]]}
+        },
+        "S3Bucket": {
+        "Description": "S3 Bucket storing the logs",
+        "Value": {
+            "Fn::Join": [
+                "",
+                [
+                    "https://s3.console.aws.amazon.com/s3/buckets/",
+                    {
+                        "Ref": "ChaosDemoBucket"
+                    }
+                ]
+            ]
+        }
+    },
+        "ChaosDemoSqs" : {
+        "Description": "SQS ARN",
+        "Value" : { "Fn::GetAtt" : ["ChaosDemoSqs", "Arn"] }
+        }
+    }
+}
