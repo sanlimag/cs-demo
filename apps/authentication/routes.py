@@ -17,7 +17,7 @@ from apps.authentication.forms import LoginForm, CreateAccountForm
 from apps.authentication.models import Users
 from apps.authentication.util import verify_pass
 
-import json_logging, logging
+import json,json_logging, logging
 
 #Configure logging
 json_logging.init_flask(enable_json=True)
@@ -25,6 +25,8 @@ logger = logging.getLogger("app-logger")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
+
+log_message = {}
 
 @blueprint.route('/')
 def route_default():
@@ -49,11 +51,24 @@ def login():
         if user and verify_pass(password, user.password):
 
             login_user(user)
-            logger.info(f'{{"action": "login", "status": "completed", "parameters": [ "username": {username}, "user_type": "subscriber", "user_status": "regular"]}}')
+            log_message['action'] = "login"
+            log_message['status'] = "complete"
+            log_message['parameters'] = {}
+            log_message['parameters']['username'] = username
+            log_message['parameters']['user_type'] = "subscriber"
+            log_message['parameters']['subscription_status'] = "active"
+            logger.info(log_message)
             return redirect(url_for('authentication_blueprint.route_default'))
 
         # Something (user or pass) is not ok
-        logger.error(f'{{"action": "login", "status": "failed", "reason": "wrong credentials", "parameters": [ "username": {username}, "user_type": "subscriber"]}}')
+        log_message['action'] = "login"
+        log_message['status'] = "error"
+        log_message['reason'] = "wrong or missing credentials"
+        log_message['parameters'] = {}
+        log_message['parameters']['username'] = username
+        log_message['parameters']['user_type'] = "subscriber"
+        log_message['parameters']['subscription_status'] = "active"
+        logger.error(log_message)
         return render_template('accounts/login.html',
                                msg='Wrong user or password',
                                form=login_form)
@@ -74,9 +89,22 @@ def register():
 
         # Check usename exists
         user = Users.query.filter_by(username=username).first()
-        logger.info(f'{{"action": "create_user", "status": "completed", "parameters": [ "username": {username},"user_type": "subscriber"]}}')
+        log_message['action'] = "create_user"
+        log_message['status'] = "complete"
+        log_message['parameters'] = {}
+        log_message['parameters']['username'] = username
+        log_message['parameters']['user_type'] = "subscriber"
+        log_message['parameters']['subscription_status'] = "active"
+        logger.info(log_message)
         if user:
-            logger.error(f'{{"action": "create_user", "status": "failed", "reason": "duplicated username", "parameters": [ "username": {username},"user_type": "subscriber"]}}')
+            log_message['action'] = "create_user"
+            log_message['status'] = "failed"
+            log_message['reason'] = "duplicated username"
+            log_message['parameters'] = {}
+            log_message['parameters']['username'] = username
+            log_message['parameters']['user_type'] = "subscriber"
+            log_message['parameters']['subscription_status'] = "active"
+            logger.info(log_message)
             return render_template('accounts/register.html',
                                    msg='Username already registered',
                                    success=False,
@@ -95,7 +123,13 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        logger.info(f'{{"action": "create_user", "status": "completed", "parameters": [ "username": {username},"user_type": "subscriber"]}}')
+        log_message['action'] = "create_user"
+        log_message['status'] = "complete"
+        log_message['parameters'] = {}
+        log_message['parameters']['username'] = username
+        log_message['parameters']['user_type'] = "subscriber"
+        log_message['parameters']['subscription_status'] = "active"
+        logger.info(log_message)
         return render_template('accounts/register.html',
                                msg='User created please <a href="/login"><b>login</b></a>',
                                success=True,
@@ -108,7 +142,9 @@ def register():
 @blueprint.route('/logout')
 def logout():
     logout_user()
-    logger.info(f'{{"action": "logout", "status": "completed"}}')
+    log_message['action'] = "logout"
+    log_message['status'] = "complete"
+    logger.info(log_message)
     return redirect(url_for('authentication_blueprint.login'))
 
 
@@ -116,22 +152,34 @@ def logout():
 
 @login_manager.unauthorized_handler
 def unauthorized_handler():
-    logger.error(f'{{"action": "get_page", "status": "failed", "reason": "unauthorized handler", "parameters": [ "error": 403]}}')
+    log_message['action'] = "get_page"
+    log_message['status'] = "failed"
+    log_message['reason'] = "unauthorized handler"
+    logger.info(log_message)
     return render_template('home/page-403.html'), 403
 
 
 @blueprint.errorhandler(403)
 def access_forbidden(error):
-    logger.error(f'{{"action": "get_page", "status": "failed", "reason": "unauthorized access attempt", "parameters": [ "error": 403]}}')
+    log_message['action'] = "get_page"
+    log_message['status'] = "failed"
+    log_message['reason'] = "access forbidden"
+    logger.info(log_message)
     return render_template('home/page-403.html'), 403
 
 @blueprint.errorhandler(404)
 def not_found_error(error):
-    logger.error(f'{{"action": "get_page", "status": "failed", "reason": "page not found", "parameters": [ "error": 404]}}')
+    log_message['action'] = "get_page"
+    log_message['status'] = "failed"
+    log_message['reason'] = "page not found"
+    logger.info(log_message)
     return render_template('home/page-404.html'), 404
 
 
 @blueprint.errorhandler(500)
 def internal_error(error):
-    logger.error(f'{{"action": "get_page", "status": "failed", "reason": "server/internal error", "parameters": [ "error": 500]}}')
+    log_message['action'] = "get_page"
+    log_message['status'] = "failed"
+    log_message['reason'] = "server/internal error"
+    logger.info(log_message)
     return render_template('home/page-500.html'), 500
