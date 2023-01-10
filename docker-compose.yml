@@ -3,6 +3,7 @@ services:
   fluentbit:
     container_name: fluentbit
     image: fluent/fluent-bit:1.9.0
+    env_file: .env
     build:
       context: ./fluent-bit
     networks:
