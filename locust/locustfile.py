@@ -35,31 +35,6 @@ class QuickstartUser(HttpUser):
         print(f"Response Status: {response.status_code}")
         print(f"Headers: {response.headers}")
 
-        # set "token" from response header
-        #self.client.headers.update({'Authorization': response.headers.get('token')})
-
-        # OR set "token" from response cookies
-        #self.client.cookies.set('Authorization', response.cookies.get('token'))
-
-        # OR set "token" from response body
-        #self.client.headers.update({'Authorization': str(response.content.decode().find('token'))})
-
-    #        self.login()
-#        #self.client.post("/login", {"username": "user", "password": "pass"})
-#
-#    def get_token(self):
-#        response = self.client.get("/login")
-#        # Sample string from response:
-#        # <input id="csrf_token" name="csrf_token" type="hidden" value="REDACTED">
-#        self.csrftoken = re.search(' name="csrf_token" .* value="(.+?)"', response.text).group(1)
-#        print(f"DEBUG: self.csrftoken = {self.csrftoken}")
-#
-#    def login(self):
-#        response = self.client.post("/login",
-#                                    {"username_login": "user", "pwd": "pass"},
-#                                    headers={"X-CSRFToken": self.csrftoken})
-#        print(f"DEBUG: login response.status_code = {response.status_code}")
-
     @task(100)
     def load_page(self):
         self.client.get("/")
@@ -75,6 +50,6 @@ class QuickstartUser(HttpUser):
         self.client.get("/help")
         self.client.get("/test")
 
-    @task(0.2)
+    @task(1)
     def gen_slow_errors(self):
         self.client.post("/login",{"username_login": "test", "pwd": "test"},headers={"X-CSRFToken": self.csrftoken})
