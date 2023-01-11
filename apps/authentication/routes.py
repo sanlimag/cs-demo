@@ -82,11 +82,9 @@ def register():
         email = request.form['email']
 
         # Check usename exists
-        logger.info("user action", extra={'props': {'action': 'register', 'status': 'completed',
-                                                    'parameters': {'username': username, 'user_type': 'subscriber',
-                                                                   'subscription_status': 'active'}}})
+        user = Users.query.filter_by(username=username).first()
         if user:
-            logger.info("user action", extra={'props': {'action': 'register', 'status': 'failed', 'reason':
+            logger.info("user action", extra={'props': {'action': 'create_user', 'status': 'failed', 'reason':
                 'username already exists', 'parameters': {'username': username, 'user_type': 'subscriber',
                                                       'subscription_status': 'active'}}})
             return render_template('accounts/register.html',
